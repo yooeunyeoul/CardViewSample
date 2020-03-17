@@ -54,11 +54,12 @@
         app:cardPreventCornerOverlap="false">
 
         <TextView
+            android:id="@+id/btn_get_crowling"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:padding="20dp"
-            android:text="아아아이이이"
+            android:text="웹사이트 가져오기"
             android:textSize="20dp" />
 
     </androidx.cardview.widget.CardView>
