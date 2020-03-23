@@ -42,4 +42,14 @@ dependencies {
     // optional - RxJava support for Room
     implementation "androidx.room:room-rxjava2:$room_version"
     implementation files('libs/jsoup-1.12.2.jar')
+
+    // Mockito framework
+    testImplementation "com.nhaarman.mockitokotlin2:mockito-kotlin:2.1.0" //Mockito-Kotlin
+    testImplementation 'org.mockito:mockito-inline:2.21.0'
+
+    testImplementation "com.nhaarman:mockito-kotlin-kt1.1:1.5.0"
+    testImplementation 'io.kotlintest:kotlintest-runner-junit5:3.3.0'
+
+    implementation 'com.orhanobut:logger:2.2.0'
 }
+
