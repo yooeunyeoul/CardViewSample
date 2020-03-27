@@ -5,21 +5,25 @@ import android.os.StrictMode
 import androidx.appcompat.app.AppCompatActivity
 import com.orhanobut.logger.Logger
 import kotlinx.android.synthetic.main.activity_main.*
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
+import kotlin.coroutines.CoroutineContext
 
 
-class MainActivity : AppCompatActivity() {
-
+class MainActivity : AppCompatActivity(), CoroutineScope {
+    /**
+     * https://medium.com/@limgyumin/%EC%BD%94%ED%8B%80%EB%A6%B0-%EC%BD%94%EB%A3%A8%ED%8B%B4%EC%9D%98-%EA%B8%B0%EC%B4%88-cac60d4d621b
+     */
+    private var job:Job = Job()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val policy =
-            StrictMode.ThreadPolicy.Builder().permitAll().build()
-
-        StrictMode.setThreadPolicy(policy)
+//        val policy =
+//            StrictMode.ThreadPolicy.Builder().permitAll().build()
+//
+//        StrictMode.setThreadPolicy(policy)
 
         tv_select.setOnClickListener {
 
@@ -30,8 +34,116 @@ class MainActivity : AppCompatActivity() {
         }
 
         btn_get_crowling.setOnClickListener {
-            getLottoInfo()
+            cancellingCoroutine()
+            // 아에 새로운 제어범위가 생김
+//            CoroutineScope(Dispatchers.IO).launch {
+//
+//            }
+
+            // 전역으로 선언된 scope 는 유지되면서 작업이 처리되는 스레드만 변겅된다.
+//            val job = launch(Dispatchers.IO) {
+//                getLottoInfo()
+//            }
+
+//            launch {
+//                val job1 : Job = launch {
+//                    //                job.join()
+//                    var i = 0
+//                    while (i < 10) {
+//                        delay(500)
+//                        i++
+//                        Logger.e("잡 원 "+i)
+//                    }
+//
+//                }
+//                job1.join()
+//
+//                val job2 = launch {
+//
+//                    var i = 0
+//                    while (i < 10) {
+//                        delay(1000)
+//                        i++
+//                        Logger.e("잡 투 "+i)
+//                    }
+//                }
+//
+//                val deferred = async {
+//                    var i = 0
+//                    while (i < 10) {
+//                        delay(500)
+//                        i++
+//                    }
+//
+//                    "result"
+//                }
+//
+//                val result1 = deferred.await()
+//                Logger.e("결과1$result1")
+//
+//                val deferred2 = async {
+//                    var i =0
+//                    while (i < 10) {
+//                        delay(200)
+//                        i++
+//                    }
+//
+//                    "result2"
+//                }
+//
+//                val result2 = deferred2.await()
+//
+//                Logger.e("결과2$result2")
+//
+//                val job = async(start = CoroutineStart.LAZY) {  }
+//                job.await()
+//
+//
+//            }
+
+
+
+
+
+
+//            getLottoInfo()
         }
+
+
+    }
+
+    fun cancellingCoroutine()= runBlocking {
+        val job = launch {
+            repeat(1000){
+                println(" i'sleeping $it")
+                delay(500L)
+            }
+        }
+
+        delay((1300L))
+        println("기다리기 지루해")
+        job.cancel()
+        job.join()
+        println("main:now i can quit")
+    }
+
+    fun makingComputationCodeCancellableUsingYield()= runBlocking {
+
+        val starttime = System.currentTimeMillis()
+        val job = launch(Dispatchers.Default) {
+            var nextPrintTime = starttime
+            var i = 0
+            while (i < 20) {
+                yield()
+
+                if (System.currentTimeMillis() >= nextPrintTime) {
+                    println("난 자고있다 $i++")
+                    nextPrintTime += 500L
+                }
+            }
+        }
+
+        delay(1300L)
 
 
     }
@@ -114,4 +226,13 @@ class MainActivity : AppCompatActivity() {
 
     }
 
+    override val coroutineContext: CoroutineContext
+        get() =  Dispatchers.Main + job// 이 CoroutineScope 는 메인 스레드를 기본으로 동작합니다
+    // Dispatchers.IO 나 Dispatchers.Default 등의 다른 Dispatcher 를 사용해도 됩니다
+
+    override fun onDestroy() {
+        super.onDestroy()
+        job.cancel()
+    }
 }
+
