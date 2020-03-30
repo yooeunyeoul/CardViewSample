@@ -1,21 +1,36 @@
 package com.example.cardviewsample
 
 import android.os.Bundle
-import android.os.StrictMode
+import android.os.Environment
 import androidx.appcompat.app.AppCompatActivity
+import com.example.cardviewsample.Model.Lotto
+import com.google.gson.Gson
 import com.orhanobut.logger.Logger
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.coroutines.*
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
+import java.io.BufferedWriter
+import java.io.File
+import java.io.FileWriter
 import kotlin.coroutines.CoroutineContext
 
 
 class MainActivity : AppCompatActivity(), CoroutineScope {
+    private lateinit var buffer: BufferedWriter
+    private lateinit var fw: FileWriter
+    private lateinit var lottoList: MutableList<Lotto>
+    private lateinit var lotto: Lotto
+    private var beego: String = ""
+    private var individualWinningReward: String = ""
+    private var totalCountWinningPeople: String = ""
+    private var totalAmountFirstWinning: String = ""
+
     /**
      * https://medium.com/@limgyumin/%EC%BD%94%ED%8B%80%EB%A6%B0-%EC%BD%94%EB%A3%A8%ED%8B%B4%EC%9D%98-%EA%B8%B0%EC%B4%88-cac60d4d621b
      */
-    private var job:Job = Job()
+    private var job: Job = Job()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -34,7 +49,25 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
         }
 
         btn_get_crowling.setOnClickListener {
-            cancellingCoroutine()
+
+            CoroutineScope(Dispatchers.IO).launch {
+                getLottoInfo()
+
+            }
+//            cancellingCoroutine()
+//
+//            CoroutineScope(Dispatchers.Default).launch {
+//                (0..9).map {
+//                    it+1
+//                }.filter {
+//                    it>4
+//                }.forEach {
+//                    launch(Dispatchers.Main) {
+//                        println("아아")
+//                    }
+//                }
+//            }
+
             // 아에 새로운 제어범위가 생김
 //            CoroutineScope(Dispatchers.IO).launch {
 //
@@ -102,19 +135,15 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 //            }
 
 
-
-
-
-
 //            getLottoInfo()
         }
 
 
     }
 
-    fun cancellingCoroutine()= runBlocking {
+    fun cancellingCoroutine() = runBlocking {
         val job = launch {
-            repeat(1000){
+            repeat(1000) {
                 println(" i'sleeping $it")
                 delay(500L)
             }
@@ -127,7 +156,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
         println("main:now i can quit")
     }
 
-    fun makingComputationCodeCancellableUsingYield()= runBlocking {
+    fun makingComputationCodeCancellableUsingYield() = runBlocking {
 
         val starttime = System.currentTimeMillis()
         val job = launch(Dispatchers.Default) {
@@ -154,14 +183,17 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 
     fun getLottoInfo() {
 
-        for (i in 897..900) {
+        lottoList = mutableListOf()
+
+        for (i in 1..2) {
 
             val doc =
-                Jsoup.connect("https://dhlottery.co.kr/gameResult.do?method=byWin&drwNo={$i}").get()
+                Jsoup.connect("https://dhlottery.co.kr/gameResult.do?method=byWin&drwNo=$i").get()
 
             val lottoRound = doc.select("div[class=win_result]").select("h4").text()
 //            val winningNums = doc.select("div[class=nums]").select("span").eachText()
-
+            lotto = Lotto()
+            Logger.e("$lottoRound 회차")
             val resultOfTable = doc.select("div[class=content_wrap content_winnum_645]")
                 .select("table[class=tbl_data tbl_data_col]").select("tr")
 
@@ -172,18 +204,47 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
                 if (i == 0) {
                     continue
                 }
-                saveLottoData(resultOfTable[i])
+                saveLottoData(resultOfTable[i], i)
             }
 
+            lottoList.add(lotto)
 
+
+//            Logger.e(gson.toString())
+
+//            Log.e("TAG",gson.toString())
 
 
         }
+        var str = Gson().toJson(lottoList)
+//        val jsonObject = JSONObject(str)
+        Logger.json(str)
 
+        saveTxt(str)
 
     }
 
-    private fun saveLottoData(element: Element) {
+    private fun saveTxt(str: String) {
+
+        try {
+            val file = File("file.txt")
+            fw = FileWriter(file)
+            buffer = BufferedWriter(fw)
+            buffer.write(str)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
+        try {
+            buffer.close()
+            fw.close()
+        } catch (e: Exception) {
+
+        }
+
+    }
+
+    private fun saveLottoData(element: Element, tableRow: Int) {
 
         //
         val winningResult = element.select("td")
@@ -196,28 +257,58 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 
                 // 1등 당첨금액
                 1 -> {
-                    val totalAmountFirstWinning = winningResult[i].text()
-                    Logger.e(totalAmountFirstWinning)
+                    totalAmountFirstWinning = winningResult[i].text()
+//                    Logger.e(totalAmountFirstWinning)
                 }
 
                 // 1등 당첨자 수
                 2 -> {
-                    val totalCountWinningPeople = winningResult[i].text()
-                    Logger.e(totalCountWinningPeople)
+                    totalCountWinningPeople = winningResult[i].text()
+//                    Logger.e(totalCountWinningPeople)
                 }
 
                 // 1등 개인 보상
                 3 -> {
-                    val individualWinningReward = winningResult[i].text()
-                    Logger.e(individualWinningReward)
+                    individualWinningReward = winningResult[i].text()
+//                    Logger.e(individualWinningReward)
                 }
 
                 // 비고
                 5 -> {
-                    val beego = winningResult[i].text()
-                    Logger.e(beego)
+                    beego = winningResult[i].text()
+//                    Logger.e(beego)
                 }
 
+            }
+        }
+
+        when (tableRow) {
+            1 -> {
+                lotto.firstIndividualReward = individualWinningReward
+                lotto.firstTotalPeople = totalCountWinningPeople
+                lotto.firstTotalReward = totalAmountFirstWinning
+                lotto.beego = beego
+            }
+
+            2 -> {
+                lotto.secondIndividualReward = individualWinningReward
+                lotto.secondTotalPeople = totalCountWinningPeople
+                lotto.secondTotalReward = totalAmountFirstWinning
+            }
+            3 -> {
+                lotto.thirdIndividualReward = individualWinningReward
+                lotto.thirdTotalPeople = totalCountWinningPeople
+                lotto.thirdTotalReward = totalAmountFirstWinning
+            }
+            4 -> {
+                lotto.fourthIndividualReward = individualWinningReward
+                lotto.fourthTotalPeople = totalCountWinningPeople
+                lotto.fourthTotalReward = totalAmountFirstWinning
+            }
+            5 -> {
+                lotto.fifthIndividualReward = individualWinningReward
+                lotto.fifthTotalPeople = totalCountWinningPeople
+                lotto.fifthTotalReward = totalAmountFirstWinning
             }
 
 
@@ -227,7 +318,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
     }
 
     override val coroutineContext: CoroutineContext
-        get() =  Dispatchers.Main + job// 이 CoroutineScope 는 메인 스레드를 기본으로 동작합니다
+        get() = Dispatchers.Main + job// 이 CoroutineScope 는 메인 스레드를 기본으로 동작합니다
     // Dispatchers.IO 나 Dispatchers.Default 등의 다른 Dispatcher 를 사용해도 됩니다
 
     override fun onDestroy() {
