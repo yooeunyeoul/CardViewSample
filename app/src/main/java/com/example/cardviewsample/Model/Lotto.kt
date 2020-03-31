@@ -4,6 +4,9 @@ import androidx.room.Entity
 
 @Entity(tableName = "lottoList")
 data class Lotto(
+    var round:Int=0,
+    var date : String = "",
+
     var firstTotalReward: String="",
     var firstTotalPeople: String="",
     var firstIndividualReward: String?="",
@@ -30,7 +33,8 @@ data class Lotto(
     var numberThree : Int=0,
     var numberFour : Int=0,
     var numberFive : Int=0,
-    var numberSix:Int=0
+    var numberSix:Int=0,
+    var bonus:Int = 0
 
 ) {
 }

@@ -1,22 +1,25 @@
 package com.example.cardviewsample
 
 import android.os.Bundle
-import android.os.Environment
+import android.renderscript.Sampler
+import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import com.example.cardviewsample.Model.Lotto
+import com.google.firebase.database.*
 import com.google.gson.Gson
 import com.orhanobut.logger.Logger
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.coroutines.*
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
-import java.io.BufferedWriter
-import java.io.File
-import java.io.FileWriter
+import java.io.*
+import java.nio.ByteBuffer
+import java.nio.channels.Channels
 import kotlin.coroutines.CoroutineContext
 
 
 class MainActivity : AppCompatActivity(), CoroutineScope {
+    private lateinit var conditionRef: DatabaseReference
     private lateinit var buffer: BufferedWriter
     private lateinit var fw: FileWriter
     private lateinit var lottoList: MutableList<Lotto>
@@ -35,12 +38,51 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-//        val policy =
-//            StrictMode.ThreadPolicy.Builder().permitAll().build()
-//
-//        StrictMode.setThreadPolicy(policy)
+        val mRootRef = FirebaseDatabase.getInstance().reference
+        conditionRef = mRootRef.child("Lotto_Winning_History_info")
+
+        val childEventListener = object : ChildEventListener{
+            override fun onCancelled(p0: DatabaseError) {
+
+
+            }
+
+            override fun onChildMoved(p0: DataSnapshot, p1: String?) {
+            }
+
+            override fun onChildChanged(p0: DataSnapshot, p1: String?) {
+            }
+
+            override fun onChildAdded(p0: DataSnapshot, p1: String?) {
+
+                val value = p0.getValue(Lotto::class.java)
+
+            }
+
+            override fun onChildRemoved(p0: DataSnapshot) {
+            }
+
+        }
+
+
+
 
         tv_select.setOnClickListener {
+            val query = conditionRef.child("Lotto_Winning_History_info").orderByValue().limitToLast(1)
+            query.addValueEventListener(object : ValueEventListener{
+                override fun onCancelled(p0: DatabaseError) {
+
+                }
+
+                override fun onDataChange(dataSnapshot: DataSnapshot) {
+                    val key = dataSnapshot.key
+                    Logger.e(key.toString())
+
+                }
+
+            })
+
+
 
         }
 
@@ -141,6 +183,23 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 
     }
 
+    override fun onStart() {
+        super.onStart()
+
+        conditionRef.addValueEventListener(object : ValueEventListener {
+            override fun onCancelled(p0: DatabaseError) {
+
+            }
+
+            override fun onDataChange(p0: DataSnapshot) {
+
+            }
+
+        })
+
+
+    }
+
     fun cancellingCoroutine() = runBlocking {
         val job = launch {
             repeat(1000) {
@@ -185,15 +244,34 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 
         lottoList = mutableListOf()
 
-        for (i in 1..2) {
+        for (i in 1..904) {
 
             val doc =
                 Jsoup.connect("https://dhlottery.co.kr/gameResult.do?method=byWin&drwNo=$i").get()
 
-            val lottoRound = doc.select("div[class=win_result]").select("h4").text()
+            val winResult = doc.select("div[class=win_result]")
+            val lottoRound = winResult.select("h4 strong").text().replace("회", "")
+            val date = winResult.select("p[class=desc]").text()
+            val winNumbers = winResult.select("div[class=nums]").select("span").eachText()
 //            val winningNums = doc.select("div[class=nums]").select("span").eachText()
             lotto = Lotto()
-            Logger.e("$lottoRound 회차")
+
+            lotto.date = date
+
+            lotto.round = lottoRound.toInt()
+
+            lotto.numberOne = winNumbers[0].toInt()
+            lotto.numberTwo = winNumbers[1].toInt()
+            lotto.numberThree = winNumbers[2].toInt()
+            lotto.numberFour = winNumbers[3].toInt()
+            lotto.numberFive = winNumbers[4].toInt()
+            lotto.numberSix = winNumbers[5].toInt()
+            lotto.bonus = winNumbers[6].toInt()
+
+
+            Logger.e("$winNumbers")
+            Logger.e("$lottoRound")
+            Logger.e("$date")
             val resultOfTable = doc.select("div[class=content_wrap content_winnum_645]")
                 .select("table[class=tbl_data tbl_data_col]").select("tr")
 
@@ -208,7 +286,8 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
             }
 
             lottoList.add(lotto)
-
+//            val child = conditionRef.child(lottoRound)
+//            child.setValue(lotto)
 
 //            Logger.e(gson.toString())
 
@@ -226,22 +305,53 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 
     private fun saveTxt(str: String) {
 
-        try {
-            val file = File("file.txt")
-            fw = FileWriter(file)
-            buffer = BufferedWriter(fw)
-            buffer.write(str)
-        } catch (e: Exception) {
-            e.printStackTrace()
+//        val string = ""
+//
+//        val inputStream = assets.open("lotto.txt")
+//        val size = inputStream.available()
+//        val buffer = ByteArray(size)
+//        inputStream.read(buffer)
+//        val text = String(buffer)
+//
+//
+//
+//        try {
+//            val file = File("file.txt")
+//            fw = FileWriter(file)
+//            buffer = BufferedWriter(fw)
+//            buffer.write(str)
+//        } catch (e: Exception) {
+//            e.printStackTrace()
+//        }
+//
+//        try {
+//            buffer.close()
+//            fw.close()
+//        } catch (e: Exception) {
+//
+//        }
+        val assetManager = resources.assets
+        val inputStream = applicationContext.assets.open("lotto.txt")
+        val f = getFileStreamPath("lotto.txt")
+        val oupputStream = FileOutputStream(f)
+
+        val buffer = ByteBuffer.allocateDirect(1024 * 8)
+
+        val ich = Channels.newChannel(inputStream)
+        val och = Channels.newChannel(oupputStream)
+
+        while (ich.read(buffer) > -1 || buffer.position() > 0) {
+            buffer.flip()
+            och.write(buffer)
+            buffer.compact()
         }
+        ich.close()
+        och.close()
 
-        try {
-            buffer.close()
-            fw.close()
-        } catch (e: Exception) {
-
-        }
-
+        val f2 = getFileStreamPath("lotto.txt")
+        val fw = FileWriter(f2)
+        fw.write(str)
+        fw.close()
     }
 
     private fun saveLottoData(element: Element, tableRow: Int) {
