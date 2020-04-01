@@ -43,7 +43,6 @@ dependencies {
     implementation "androidx.room:room-ktx:$room_version"
     // optional - RxJava support for Room
     implementation "androidx.room:room-rxjava2:$room_version"
-    implementation files('libs/jsoup-1.12.2.jar')
 
     // Mockito framework
     testImplementation "com.nhaarman.mockitokotlin2:mockito-kotlin:2.1.0" //Mockito-Kotlin
@@ -60,5 +59,9 @@ dependencies {
 
     implementation 'com.google.firebase:firebase-analytics:17.3.0'
     implementation 'com.google.firebase:firebase-database:19.2.1'
+
+    implementation 'org.jsoup:jsoup:1.11.3'
+
+
 }
 

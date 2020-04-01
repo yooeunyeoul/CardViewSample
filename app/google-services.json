@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "1029640416337",
+    "firebase_url": "https://lottoproject-2479b.firebaseio.com",
+    "project_id": "lottoproject-2479b",
+    "storage_bucket": "lottoproject-2479b.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1029640416337:android:976ce71c6660d456641c70",
+        "android_client_info": {
+          "package_name": "com.example.cardviewsample"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1029640416337-4sfqbjvkf878u0scc3pv0sh30s4hmf5c.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAqXDS11fvk0JXggMnJY7PnNTe_PfGGIos"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1029640416337-4sfqbjvkf878u0scc3pv0sh30s4hmf5c.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

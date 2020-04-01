@@ -1,25 +1,27 @@
 package com.example.cardviewsample
 
 import android.os.Bundle
-import android.renderscript.Sampler
-import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import com.example.cardviewsample.Model.Lotto
-import com.google.firebase.database.*
+import com.google.firebase.database.ChildEventListener
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
 import com.google.gson.Gson
 import com.orhanobut.logger.Logger
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.coroutines.*
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
-import java.io.*
+import java.io.BufferedWriter
+import java.io.FileOutputStream
+import java.io.FileWriter
 import java.nio.ByteBuffer
 import java.nio.channels.Channels
 import kotlin.coroutines.CoroutineContext
 
 
 class MainActivity : AppCompatActivity(), CoroutineScope {
-    private lateinit var conditionRef: DatabaseReference
     private lateinit var buffer: BufferedWriter
     private lateinit var fw: FileWriter
     private lateinit var lottoList: MutableList<Lotto>
@@ -39,48 +41,48 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
         setContentView(R.layout.activity_main)
 
         val mRootRef = FirebaseDatabase.getInstance().reference
-        conditionRef = mRootRef.child("Lotto_Winning_History_info")
 
-        val childEventListener = object : ChildEventListener{
+        val query = mRootRef.child("Lotto_Winning_History_info").limitToLast(5)
+        query.addChildEventListener(object : ChildEventListener{
+
             override fun onCancelled(p0: DatabaseError) {
-
 
             }
 
             override fun onChildMoved(p0: DataSnapshot, p1: String?) {
+
             }
 
             override fun onChildChanged(p0: DataSnapshot, p1: String?) {
+
             }
 
-            override fun onChildAdded(p0: DataSnapshot, p1: String?) {
+            override fun onChildAdded(dataSnapshot: DataSnapshot, p1: String?) {
+                val value = dataSnapshot.getValue(Lotto::class.java)
+                Logger.e("데이터 어떻게 나오나요$value")
 
-                val value = p0.getValue(Lotto::class.java)
+
+                //TODO:: 1. 크롤링으로 일단 최신 회차 번호를 가져옴
+                //TODO:: 2. 파이어베이스 제일 상단 번호와 크롤링 로또 라운드 데이터를 비교하여 같은지 판단한다.
+                //TODO:: 3. 번호가 같으면 파이어베이스 데이터와 , DB에서 가져온 최신 라운드와 같은지 판단한다.
+                //TODO:: 4. 같다면 그대로 DB 에서 데이터를 모두 긁어와서 뿌려주고, 같지 않다면 , 데이터를 insert 해주고 , DB에서 긁어온다.
+
 
             }
 
             override fun onChildRemoved(p0: DataSnapshot) {
+
             }
 
-        }
+        })
+
+
 
 
 
 
         tv_select.setOnClickListener {
-            val query = conditionRef.child("Lotto_Winning_History_info").orderByValue().limitToLast(1)
-            query.addValueEventListener(object : ValueEventListener{
-                override fun onCancelled(p0: DatabaseError) {
 
-                }
-
-                override fun onDataChange(dataSnapshot: DataSnapshot) {
-                    val key = dataSnapshot.key
-                    Logger.e(key.toString())
-
-                }
-
-            })
 
 
 
@@ -185,18 +187,6 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 
     override fun onStart() {
         super.onStart()
-
-        conditionRef.addValueEventListener(object : ValueEventListener {
-            override fun onCancelled(p0: DatabaseError) {
-
-            }
-
-            override fun onDataChange(p0: DataSnapshot) {
-
-            }
-
-        })
-
 
     }
 
